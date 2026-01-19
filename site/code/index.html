@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>D Bot Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/assets/css/style.css">
+</head>
+<body>
+
+    <div class="bg-orb orb-1"></div>
+    <div class="bg-orb orb-2"></div>
+    <div class="grid-overlay"></div>
+
+    <nav class="glass-nav">
+        <div class="logo"><i class="fa-solid fa-shield-halved"></i> D Bot</div>
+        <div class="nav-links">
+            {% if authorized %}
+                <div class="user-profile">
+                    <img src="https://cdn.discordapp.com/avatars/{{ user.id }}/{{ user.avatar }}.png" alt="User">
+                    <span>{{ user.name }}</span>
+                    <a href="/" class="btn-logout"><i class="fa-solid fa-right-from-bracket"></i></a>
+                </div>
+            {% else %}
+                <a href="/login" class="btn-login"><i class="fa-brands fa-discord"></i> Увійти</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    {% if not in_dashboard %}
+    <header class="hero">
+        <div class="hero-content">
+            <h1 class="glow-text">Захист нового покоління</h1>
+            <p>Anti-Invite, Anti-TLauncher, Економіка та Ігри в одному боті.</p>
+            <div class="hero-btns">
+                <a href="/login" class="btn-primary">Дашборд</a>
+                <a href="#" class="btn-secondary">Додати бота</a>
+            </div>
+        </div>
+    </header>
+    {% else %}
+
+    <div class="dashboard-container">
+        <aside class="sidebar glass-panel">
+            <h3>Сервери</h3>
+            <div class="guilds-list">
+                {% for guild in guilds %}
+                <div class="guild-item {% if guild.id in bot_guilds %}active-bot{% endif %}"
+                     onclick="loadGuild('{{ guild.id }}', '{{ guild.name }}', {{ 'true' if guild.id in bot_guilds else 'false' }})">
+                    {% if guild.icon %}
+                    <img src="https://cdn.discordapp.com/icons/{{ guild.id }}/{{ guild.icon }}.png">
+                    {% else %}
+                    <div class="no-icon">{{ guild.name[0] }}</div>
+                    {% endif %}
+                    <span class="tooltip">{{ guild.name }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <main class="main-content glass-panel" id="main-panel">
+            <div class="empty-state">
+                <i class="fa-solid fa-server"></i>
+                <h2>Виберіть сервер зліва</h2>
+                <p>Налаштуйте модулі захисту та економіки</p>
+            </div>
+
+            <div id="settings-area" style="display: none;">
+                <h2 id="server-title">Налаштування</h2>
+
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('protection')"><i class="fa-solid fa-shield-virus"></i> Захист</button>
+                    <button class="tab-btn" onclick="switchTab('games')"><i class="fa-solid fa-gamepad"></i> Ігри</button>
+                    <button class="tab-btn" onclick="switchTab('economy')"><i class="fa-solid fa-coins"></i> Економіка</button>
+                </div>
+
+                <div id="tab-protection" class="tab-content active">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-link"></i> Anti-Invite</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="ai-enabled" onchange="updateDB('anti_invite_settings', 'enabled', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p>Блокує посилання на інші Discord сервери.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3><i class="fa-solid fa-ban"></i> Anti-TLauncher</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="at-enabled" onchange="updateDB('antitlauncher_settings', 'enabled', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="input-group">
+                            <label>Варнів до бану:</label>
+                            <input type="number" id="at-warns" onchange="updateDB('antitlauncher_settings', 'warnings_to_ban', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-games" class="tab-content">
+                    <div class="card">
+                        <h3>🔢 Рахувальник</h3>
+                        <div class="input-group">
+                            <label>Поточне число:</label>
+                            <input type="number" id="count-num" onchange="updateDB('server_settings', 'current_count', this.value)">
+                        </div>
+                        <div class="input-group">
+                            <label>ID Каналу гри:</label>
+                            <input type="text" id="count-chan" onchange="updateDB('server_settings', 'counting_channel', this.value)">
+                        </div>
+                    </div>
+                </div>
+
+                <div id="tab-economy" class="tab-content">
+                    <div class="card">
+                        <h3>💰 Редактор балансу</h3>
+                        <p>Введіть ID користувача, щоб змінити його баланс.</p>
+                        <div class="input-group">
+                            <input type="text" id="eco-user-id" placeholder="User ID">
+                            <input type="number" id="eco-amount" placeholder="Новий баланс">
+                            <button class="btn-primary" onclick="updateUserEco()">Зберегти</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+    {% endif %}
+
+    <footer class="footer">
+        <p>&copy; 2026 D Bot Inc.</p>
+        <div class="footer-links">
+            <a href="/privacy-policy.md" target="_blank">Політика конфіденційності</a>
+            <a href="/terms-of-use.md" target="_blank">Умови використання</a>
+        </div>
+    </footer>
+
+    <script src="/assets/js/script.js"></script>
+</body>
+</html>
